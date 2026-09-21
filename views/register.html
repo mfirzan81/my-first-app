@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+  </nav>
+
+  <main style="max-width: 400px;">
+    <h1>Register</h1>
+    <form id="register-form">
+      <label>Username<br><input type="text" name="username" required></label><br><br>
+      <label>Password<br><input type="password" name="password" required minlength="6"></label><br><br>
+      <button type="submit">Register</button>
+</form>
+    <p id="msg"></p>
+    <p>Already have an account? <a href="/login">Login here</a></p>
+  </main>
+
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      const msg = document.getElementById('msg');
+      if (result.error) {
+        msg.textContent = result.error;
+        msg.style.color = 'red';
+      } else {
+        msg.textContent = 'Account created! Redirecting...';
+        msg.style.color = 'green';
+        setTimeout(() => window.location.href = '/login', 1500);
+      }
+    });
+  </script>
+</body>
+</html>

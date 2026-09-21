@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+  </nav>
+
+  <main style="max-width: 400px;">
+    <h1>Login</h1>
+    <form id="login-form">
+      <label>Username<br><input type="text" name="username" required></label><br><br>
+      <label>Password<br><input type="password" name="password" required></label><br><br>
+      <button type="submit">Login</button>
+    </form>
+    <p id="msg"></p>
+    <p>No account? <a href="/register">Register here</a></p>
+  </main>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      const msg = document.getElementById('msg');
+      if (result.error) {
+        msg.textContent = result.error;
+        msg.style.color = 'red';
+      } else {
+        window.location.href = '/';
+      }
+    });
+  </script>
+</body>
+</html>

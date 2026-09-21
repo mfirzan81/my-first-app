@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My First App</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/contact">Contact</a>
+    <span id="nav-user" style="float:right;color:#adf;"></span>
+    <button id="logout-btn" class="btn-nav hidden">Logout</button>
+  </nav>
+
+  <main>
+    <h1>Welcome to My First App</h1>
+
+    <h2>Add a User</h2>
+    <form id="add-user-form">
+      <label>Name<br><input type="text" name="name" required></label><br><br>
+      <label>Email<br><input type="email" name="email" required></label><br><br>
+      <button type="submit">Add User</button>
+    </form>
+    <p id="add-msg"></p>
+
+    <h2>Users</h2>
+    <table id="user-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="user-list">
+        <tr><td colspan="3">Loading...</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Edit User</h2>
+      <form id="edit-form">
+        <input type="hidden" name="id">
+        <label>Name<br><input type="text" name="name" required></label><br><br>
+        <label>Email<br><input type="email" name="email" required></label><br><br>
+        <button type="submit">Save</button>
+        <button type="button" id="cancel-edit">Cancel</button>
+      </form>
+      <p id="edit-msg"></p>
+    </div>
+  </div>
+
+  <script>
+    fetch('/api/me').then(r => r.json()).then(({ user }) => {
+      if (user) {
+        document.getElementById('nav-user').textContent = `Logged in as ${user.username}`;
+        document.getElementById('logout-btn').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/login';
+    });
+
+    async function loadUsers() {
+      const res = await fetch('/api/users');
+      const users = await res.json();
+      const tbody = document.getElementById('user-list');
+      tbody.innerHTML = users.map(u => `
+        <tr id="row-${u.id}">
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td>
+            <button class="btn-edit" onclick="openEdit(${u.id}, '${u.name}', '${u.email}')">Edit</button>
+            <button class="btn-delete" onclick="deleteUser(${u.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('add-user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      const msg = document.getElementById('add-msg');
+      if (result.error) {
+        msg.textContent = result.error;
+        msg.style.color = 'red';
+      } else {
+        msg.textContent = `User ${result.name} added!`;
+        msg.style.color = 'green';
+        e.target.reset();
+        loadUsers();
+      }
+    });
+
+    async function deleteUser(id) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      loadUsers();
+    }
+
+    function openEdit(id, name, email) {
+      const form = document.getElementById('edit-form');
+      form.id.value = id;
+      form.name.value = name;
+      form.email.value = email;
+      document.getElementById('edit-msg').textContent = '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('cancel-edit').addEventListener('click', () => {
+      document.getElementById('edit-modal').classList.add('hidden');
+    });
+
+    document.getElementById('edit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = await fetch(`/api/users/${data.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: data.name, email: data.email })
+      });
+      const result = await res.json();
+      if (result.error) {
+        document.getElementById('edit-msg').textContent = result.error;
+        document.getElementById('edit-msg').style.color = 'red';
+      } else {
+        document.getElementById('edit-modal').classList.add('hidden');
+        loadUsers();
+      }
+    });
+
+    loadUsers();
+  </script>
+</body>
+</html>
