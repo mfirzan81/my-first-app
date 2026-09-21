@@ -2,10 +2,15 @@ const express = require('express');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const cors = require('cors');
 const db = require('./database');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+app.use(cors({
+  origin: 'https://my-react-app-v2-seven.vercel.app',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static('public'));
 app.use(session({
